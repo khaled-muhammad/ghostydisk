@@ -1,0 +1,53 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+# dist/
+build/
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.pytest_cache/
+
+# Test & coverage
+.coverage
+.cache/
+.tox/
+nosetests.xml
+coverage.xml
+htmlcov/
+
+# Misc
+*.bak
+*.swp
+*.tmp
+*.orig
+
+# Binary files
+*.bin
+*.out
+*.exe
+
+# Linux prebuilt binaries
+ghostdisk_linux_x86
+ghostdisk_linux_arm
+ghostdisk_binary/
