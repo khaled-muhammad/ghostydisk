@@ -13,7 +13,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+            artifact_name: ghostydisk-linux-x86_64
+          - os: windows-latest
+            platform: windows-x86_64
+            artifact_name: ghostydisk-windows-x86_64
+          - os: macos-latest
+            platform: macos-x86_64
+            artifact_name: ghostydisk-macos-x86_64
+          - os: macos-latest
+            platform: macos-arm64
+            artifact_name: ghostydisk-macos-arm64
         python-version: ['3.11']
 
     steps:
@@ -31,13 +43,19 @@ jobs:
         pip install pyinstaller
     
     - name: Build executable
+      if: matrix.os != 'macos-latest' || matrix.platform == 'macos-x86_64'
       run: |
         pyinstaller --onefile --name ghostydisk ghostydisk.py
+    
+    - name: Build executable (ARM64)
+      if: matrix.os == 'macos-latest' && matrix.platform == 'macos-arm64'
+      run: |
+        arch -arm64 pyinstaller --onefile --name ghostydisk ghostydisk.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ghostydisk-${{ matrix.os }}
+        name: ${{ matrix.artifact_name }}
         path: dist/ghostydisk${{ matrix.os == 'windows-latest' && '.exe' || '' }}
 
   release:
@@ -56,8 +74,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          artifacts/ghostydisk-ubuntu-latest/ghostydisk
-          artifacts/ghostydisk-windows-latest/ghostydisk.exe
-          artifacts/ghostydisk-macos-latest/ghostydisk
+          artifacts/ghostydisk-linux-x86_64/ghostydisk
+          artifacts/ghostydisk-windows-x86_64/ghostydisk.exe
+          artifacts/ghostydisk-macos-x86_64/ghostydisk
+          artifacts/ghostydisk-macos-arm64/ghostydisk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
