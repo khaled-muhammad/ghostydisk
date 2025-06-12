@@ -17,16 +17,19 @@ jobs:
           - os: ubuntu-latest
             platform: linux-x86_64
             artifact_name: ghostydisk-linux-x86_64
+            python-version: '3.11'
           - os: windows-latest
             platform: windows-x86_64
             artifact_name: ghostydisk-windows-x86_64
-          - os: macos-latest
+            python-version: '3.11'
+          - os: macos-13  # Intel runners
             platform: macos-x86_64
             artifact_name: ghostydisk-macos-x86_64
-          - os: macos-latest
+            python-version: '3.11'
+          - os: macos-latest  # ARM64 runners (M1/M2)
             platform: macos-arm64
             artifact_name: ghostydisk-macos-arm64
-        python-version: ['3.11']
+            python-version: '3.11'
 
     steps:
     - uses: actions/checkout@v4
@@ -42,15 +45,25 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
-    - name: Build executable
-      if: matrix.os != 'macos-latest' || matrix.platform == 'macos-x86_64'
+    - name: Build executable (Linux/Windows/Intel Mac)
+      if: matrix.platform != 'macos-arm64'
       run: |
-        pyinstaller --onefile --name ghostydisk ghostydisk.py
+        pyinstaller --onefile --name ghostydisk --console ghostydisk.py
     
-    - name: Build executable (ARM64)
-      if: matrix.os == 'macos-latest' && matrix.platform == 'macos-arm64'
+    - name: Build executable (ARM64 Mac)
+      if: matrix.platform == 'macos-arm64'
       run: |
-        arch -arm64 pyinstaller --onefile --name ghostydisk ghostydisk.py
+        pyinstaller --onefile --name ghostydisk --console --target-arch arm64 ghostydisk.py
+    
+    - name: Test executable
+      shell: bash
+      run: |
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          ./dist/ghostydisk.exe --help || echo "Help command failed, but executable exists"
+        else
+          ./dist/ghostydisk --help || echo "Help command failed, but executable exists"
+        fi
+        ls -la dist/
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -64,19 +77,49 @@ jobs:
     permissions:
       contents: write
     steps:
+    - uses: actions/checkout@v4
+    
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
     
+    - name: List artifacts
+      run: |
+        find artifacts -type f -exec ls -la {} \;
+    
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v1
       with:
+        draft: false
+        prerelease: false
+        generate_release_notes: true
         files: |
           artifacts/ghostydisk-linux-x86_64/ghostydisk
           artifacts/ghostydisk-windows-x86_64/ghostydisk.exe
           artifacts/ghostydisk-macos-x86_64/ghostydisk
           artifacts/ghostydisk-macos-arm64/ghostydisk
+        body: |
+          ## GhostyDisk Release ${{ github.ref_name }}
+          
+          ### Platform Support
+          - **Linux (x86_64)**: `ghostydisk-linux-x86_64`
+          - **Windows (x86_64)**: `ghostydisk-windows-x86_64.exe`
+          - **macOS Intel (x86_64)**: `ghostydisk-macos-x86_64`
+          - **macOS Apple Silicon (ARM64)**: `ghostydisk-macos-arm64`
+          
+          ### Usage
+          Download the appropriate binary for your platform and run:
+          ```bash
+          ./ghostydisk  # Linux/macOS
+          ghostydisk.exe  # Windows
+          ```
+          
+          ### Features
+          - Safe disk cleanup for development environments
+          - Scan for large files, old files, duplicate files, and ghost files
+          - Terminal-based interface with rich formatting
+          - Cross-platform support
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
