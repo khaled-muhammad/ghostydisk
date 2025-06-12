@@ -84,8 +84,27 @@ jobs:
       with:
         path: artifacts
     
-    - name: List artifacts
+    - name: List all artifacts (detailed)
       run: |
+        echo "=== Artifact directory structure ==="
+        find artifacts -type f -exec ls -la {} \;
+        echo "=== Tree view ==="
+        tree artifacts || find artifacts -print
+        echo "=== Contents of each artifact directory ==="
+        for dir in artifacts/*/; do
+          echo "Directory: $dir"
+          ls -la "$dir"
+        done
+    
+    - name: Rename artifacts for clarity
+      run: |
+        # Rename files to include platform in the filename
+        mv artifacts/ghostydisk-linux-x86_64/ghostydisk artifacts/ghostydisk-linux-x86_64/ghostydisk-linux-x86_64 || echo "Linux rename failed"
+        mv artifacts/ghostydisk-windows-x86_64/ghostydisk.exe artifacts/ghostydisk-windows-x86_64/ghostydisk-windows-x86_64.exe || echo "Windows rename failed"
+        mv artifacts/ghostydisk-macos-x86_64/ghostydisk artifacts/ghostydisk-macos-x86_64/ghostydisk-macos-x86_64 || echo "macOS Intel rename failed"
+        mv artifacts/ghostydisk-macos-arm64/ghostydisk artifacts/ghostydisk-macos-arm64/ghostydisk-macos-arm64 || echo "macOS ARM64 rename failed"
+        
+        echo "=== After renaming ==="
         find artifacts -type f -exec ls -la {} \;
     
     - name: Create Release
@@ -96,10 +115,10 @@ jobs:
         prerelease: false
         generate_release_notes: true
         files: |
-          artifacts/ghostydisk-linux-x86_64/ghostydisk
-          artifacts/ghostydisk-windows-x86_64/ghostydisk.exe
-          artifacts/ghostydisk-macos-x86_64/ghostydisk
-          artifacts/ghostydisk-macos-arm64/ghostydisk
+          artifacts/ghostydisk-linux-x86_64/ghostydisk-linux-x86_64
+          artifacts/ghostydisk-windows-x86_64/ghostydisk-windows-x86_64.exe
+          artifacts/ghostydisk-macos-x86_64/ghostydisk-macos-x86_64
+          artifacts/ghostydisk-macos-arm64/ghostydisk-macos-arm64
         body: |
           ## GhostyDisk Release ${{ github.ref_name }}
           
@@ -112,8 +131,10 @@ jobs:
           ### Usage
           Download the appropriate binary for your platform and run:
           ```bash
-          ./ghostydisk  # Linux/macOS
-          ghostydisk.exe  # Windows
+          ./ghostydisk-linux-x86_64      # Linux
+          ./ghostydisk-macos-x86_64      # macOS Intel
+          ./ghostydisk-macos-arm64       # macOS Apple Silicon
+          ghostydisk-windows-x86_64.exe  # Windows
           ```
           
           ### Features
