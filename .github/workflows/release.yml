@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -40,6 +43,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
@@ -51,8 +56,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          artifacts/ghostydisk-ubuntu-latest
-          artifacts/ghostydisk-windows-latest.exe
-          artifacts/ghostydisk-macos-latest
+          artifacts/ghostydisk-ubuntu-latest/ghostydisk
+          artifacts/ghostydisk-windows-latest/ghostydisk.exe
+          artifacts/ghostydisk-macos-latest/ghostydisk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
